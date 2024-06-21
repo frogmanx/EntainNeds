@@ -9,7 +9,7 @@ class RaceSummaryRepository @Inject constructor(private val nedsService: NedsSer
     NedsServiceHelper {
 
     override fun getNextRaceSummaries(): Flow<List<RaceSummary>>  = flow {
-        val response = nedsService.getRaces(method = METHOD, count = COUNT)
+        val response = nedsService.getRaces(method = METHOD, count = COUNT).data
         val list: MutableList<RaceSummary> = mutableListOf()
         response.nextToGoIds.forEach {
             response.raceSummaries[it]?.let { summary ->

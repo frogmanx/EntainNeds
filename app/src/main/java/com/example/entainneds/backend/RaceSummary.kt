@@ -2,6 +2,10 @@ package com.example.entainneds.backend
 
 
 data class NedsResponse(
+    val data: Data,
+)
+
+data class Data(
     val nextToGoIds: List<String>,
     val raceSummaries: Map<String, RaceSummary>
 )

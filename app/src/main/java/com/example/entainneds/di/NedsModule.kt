@@ -2,6 +2,8 @@ package com.example.entainneds.di
 
 import com.example.entainneds.backend.NedsService
 import com.example.entainneds.backend.RaceSummaryRepository
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,9 +20,13 @@ object NedsModule {
     @Provides
     fun provideNedsService(
     ): NedsService {
+        val gson = GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(NedsService::class.java)
     }
