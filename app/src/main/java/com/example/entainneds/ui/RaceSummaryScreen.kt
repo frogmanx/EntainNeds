@@ -61,7 +61,7 @@ fun RaceSummaryView(modifier: Modifier = Modifier, raceSummaryModel: RaceSummary
             )
         } ?:
         raceSummaryModel.raceSummaries.takeIf { it.isNotEmpty() }?.let {
-            RaceSummaryList(modifier = Modifier.testTag("RaceSummaryList"), currentTime = currentTime.absoluteValue, raceSummaries = it)
+            RaceSummaryList(modifier = Modifier.testTag("RaceSummaryList"), currentTime = currentTime.absoluteValue / 1000, raceSummaries = it)
         }
         if (raceSummaryModel.loading && raceSummaryModel.raceSummaries.isEmpty()) {
             CircularProgressIndicator(
@@ -73,7 +73,7 @@ fun RaceSummaryView(modifier: Modifier = Modifier, raceSummaryModel: RaceSummary
     }
     LaunchedEffect(currentTime) {
         delay(1000)
-        currentTime = System.currentTimeMillis() / 1000
+        currentTime = System.currentTimeMillis()
     }
 }
 
