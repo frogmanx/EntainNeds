@@ -1,54 +1,51 @@
 package com.example.entainneds.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.entainneds.R
 import com.example.entainneds.backend.RaceSummary
 import com.example.entainneds.ui.theme.Purple80
+import kotlinx.coroutines.delay
+import java.time.Duration
+import kotlin.math.absoluteValue
 
 @Composable
 fun RaceSummaryScreen(modifier: Modifier = Modifier, raceSummaryViewModel: RaceSummaryViewModel = viewModel()) {
     val raceSummaryModel by raceSummaryViewModel.uiState.collectAsState()
     RaceSummaryView(modifier = modifier, raceSummaryModel = raceSummaryModel)
-    LifecycleEventListener {
-        when (it) {
-            Lifecycle.Event.ON_RESUME -> {
-                raceSummaryViewModel.fetchRaceSummaries()
-            }
-            else -> Unit
-        }
+    LaunchedEffect(Unit) {
+        delay(60 * 1000)
+        raceSummaryViewModel.fetchRaceSummaries()
     }
 }
 
 @Composable
 fun RaceSummaryView(modifier: Modifier = Modifier, raceSummaryModel: RaceSummaryModel) {
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
     Box(modifier = modifier
         .fillMaxSize()) {
         /** If there is an error, show error, otherwise show the list of races **/
@@ -64,30 +61,36 @@ fun RaceSummaryView(modifier: Modifier = Modifier, raceSummaryModel: RaceSummary
             )
         } ?:
         raceSummaryModel.raceSummaries.takeIf { it.isNotEmpty() }?.let {
-            RaceSummaryList(modifier = Modifier.testTag("RaceSummaryList"), raceSummaries = it)
+            RaceSummaryList(modifier = Modifier.testTag("RaceSummaryList"), currentTime = currentTime.absoluteValue, raceSummaries = it)
         }
-        if (raceSummaryModel.loading) {
+        if (raceSummaryModel.loading && raceSummaryModel.raceSummaries.isEmpty()) {
             CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center).testTag("LoadingIndicator"),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .testTag("LoadingIndicator"),
             )
         }
+    }
+    LaunchedEffect(currentTime) {
+        delay(1000)
+        currentTime = System.currentTimeMillis() / 1000
     }
 }
 
 @Composable
-fun RaceSummaryList(modifier: Modifier = Modifier, raceSummaries: List<RaceSummary>) {
+fun RaceSummaryList(currentTime: Long, modifier: Modifier = Modifier, raceSummaries: List<RaceSummary>) {
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(dimensionResource(id = R.dimen.spacing_3)),
     ) {
-        raceSummaries.forEach { item ->
-            item { RaceSummary(item) }
+        raceSummaries.filter { it.advertisedStart.seconds - currentTime > -60 }.take(5).forEach { item ->
+            item { RaceSummary(currentTime = currentTime, raceSummary = item) }
         }
     }
 }
 
 @Composable
-fun RaceSummary(raceSummary: RaceSummary) {
+fun RaceSummary(currentTime: Long, raceSummary: RaceSummary) {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -95,32 +98,39 @@ fun RaceSummary(raceSummary: RaceSummary) {
             .background(color = Color.White),
     ) {
             Text(
-                modifier = Modifier.padding(dimensionResource(id = R.dimen.spacing_2)),
-                text = raceSummary.meetingName,
+                modifier = Modifier
+                    .padding(dimensionResource(id = R.dimen.spacing_2))
+                    .weight(1f),
+                text = "R${raceSummary.raceNumber} ${raceSummary.meetingName}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                modifier = Modifier
+                    .padding(dimensionResource(id = R.dimen.spacing_2)),
+                text = timeLeft(currentTime = currentTime, time = raceSummary.advertisedStart.seconds),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
             )
     }
 }
 
-@Composable
-fun LifecycleEventListener(onEvent : (event: Lifecycle.Event) -> Unit) {
-
-    val eventHandler = rememberUpdatedState(newValue = onEvent)
-    val lifecycleOwner = rememberUpdatedState(newValue = LocalLifecycleOwner.current)
-
-    DisposableEffect(lifecycleOwner.value){
-        val lifecycle = lifecycleOwner.value.lifecycle
-        val observer = LifecycleEventObserver { _, event ->
-            eventHandler.value(event)
-        }
-
-        lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycle.removeObserver(observer)
-        }
+private fun timeLeft(currentTime: Long, time: Long): String {
+    val secondsLeft = time - currentTime
+    val duration = Duration.ofSeconds(secondsLeft)
+    val hours = duration.toHours()
+    val minutes = duration.minusHours(hours).toMinutes()
+    val seconds = duration.minusHours(hours).minusMinutes(minutes).seconds
+    var timeString = ""
+    if (hours > 0 || hours < 0) {
+        timeString += " ${hours}h"
     }
+    if (minutes > 0 || minutes < 0) {
+        timeString += " ${minutes}m"
+    }
+    if (seconds > 0 || seconds < 0) {
+        timeString += " ${seconds}s"
+    }
+    return timeString.takeIf { it.isNotEmpty() } ?: "0s"
 }

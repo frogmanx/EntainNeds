@@ -23,7 +23,7 @@ data class RaceSummary(
 )
 
 data class Time(
-    val seconds: Double,
+    val seconds: Long,
 )
 
 data class Form(

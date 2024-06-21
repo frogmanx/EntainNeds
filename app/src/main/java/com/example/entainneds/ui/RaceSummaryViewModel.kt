@@ -22,6 +22,10 @@ class RaceSummaryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RaceSummaryModel())
     val uiState: StateFlow<RaceSummaryModel> = _uiState.asStateFlow()
 
+    init {
+        fetchRaceSummaries()
+    }
+
     fun fetchRaceSummaries() {
         viewModelScope.launch {
             _uiState.update { articleModel ->
