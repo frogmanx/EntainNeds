@@ -1,5 +1,6 @@
 package com.example.entainneds.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.entainneds.backend.RaceSummaryRepository
@@ -22,11 +23,8 @@ class RaceSummaryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RaceSummaryModel())
     val uiState: StateFlow<RaceSummaryModel> = _uiState.asStateFlow()
 
-    init {
-        fetchRaceSummaries()
-    }
-
     fun fetchRaceSummaries() {
+        Log.i("Test", "fetchRaceSummaries")
         viewModelScope.launch {
             _uiState.update { articleModel ->
                 articleModel.copy(loading = true, error = null)
