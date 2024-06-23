@@ -145,6 +145,7 @@ fun RaceSummaryView(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .testTag("LoadingIndicator"),
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
