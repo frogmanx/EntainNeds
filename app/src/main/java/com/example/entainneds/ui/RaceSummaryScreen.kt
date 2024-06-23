@@ -118,7 +118,7 @@ fun RaceSummaryView(
                                     top = dimensionResource(id = R.dimen.spacing_3),
                                     start = dimensionResource(id = R.dimen.spacing_2),
                                     end = dimensionResource(id = R.dimen.spacing_2),
-                                    bottom = dimensionResource(id = R.dimen.spacing_2),
+                                    bottom = dimensionResource(id = R.dimen.spacing_1),
                                 ),
                             text = stringResource(id = R.string.title),
                             style = MaterialTheme.typography.titleLarge,
