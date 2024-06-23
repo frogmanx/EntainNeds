@@ -66,7 +66,7 @@ fun RaceSummaryScreen(modifier: Modifier = Modifier, raceSummaryViewModel: RaceS
     LaunchedEffect(isResumed) {
         while(isResumed) {
             raceSummaryViewModel.fetchRaceSummaries()
-            delay(10 * 1000)
+            delay(30 * 1000)
         }
     }
     LifecycleEventListener {
