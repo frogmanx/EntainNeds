@@ -233,7 +233,9 @@ fun FilterList(
                         .background(color = MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.TopStart
                 ) {
-                    LazyColumn {
+                    LazyColumn(
+                        modifier = Modifier.padding(dimensionResource(id = R.dimen.spacing_1))
+                    ) {
                         RaceSummaryModel.filterOptions.forEach {
                             item {
                                 Row(
@@ -241,8 +243,10 @@ fun FilterList(
                                         .fillMaxWidth()
                                         .clickable { onFilterItemSelected(it.value) },
                                     verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(checked = filteredItems.contains(it.value),
-                                        onCheckedChange = { }
+                                    Checkbox(
+                                        modifier = Modifier.padding(dimensionResource(id = R.dimen.spacing_1)),
+                                        checked = filteredItems.contains(it.value),
+                                        onCheckedChange = null,
                                     )
                                     Text(
                                         text = it.key,
