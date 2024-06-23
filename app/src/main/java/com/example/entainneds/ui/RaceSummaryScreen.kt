@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.Settings
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -50,7 +50,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.entainneds.R
 import com.example.entainneds.backend.RaceSummary
-import com.example.entainneds.ui.theme.Purple80
 import kotlinx.coroutines.delay
 import java.time.Duration
 
@@ -107,14 +106,25 @@ fun RaceSummaryView(
                     .testTag("Error"),
                 text = it,
                 fontSize = 25.sp,
-                color = Purple80,
             )
         } ?:
         raceSummaryModel.raceSummaries.takeIf { it.isNotEmpty() }?.let {
             var showFilter by remember { mutableStateOf(false) }
             Box(modifier = Modifier.fillMaxSize()) {
                 Column {
-                    RaceFilter { showFilter = !showFilter }
+                    Row {
+                        Text(
+                            modifier = Modifier
+                                .padding(
+                                    top = dimensionResource(id = R.dimen.spacing_3),
+                                    start = dimensionResource(id = R.dimen.spacing_2),
+                                    end = dimensionResource(id = R.dimen.spacing_2)
+                                ),
+                            text = stringResource(id = R.string.title),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                        RaceFilter { showFilter = !showFilter }
+                    }
                     RaceSummaryList(
                         modifier = Modifier.testTag("RaceSummaryList"),
                         currentTimeSec = currentTimeSec,
@@ -150,9 +160,9 @@ fun RaceFilter(onClick: () -> Unit) {
                 .padding(top = spacing3, start = spacing2, end = spacing2)
                 .clickable { onClick() }
                 .align(Alignment.TopEnd),
-            tint = Color.White,
-            imageVector = Icons.Sharp.Settings,
-            contentDescription = stringResource(id = R.string.settings)
+            tint = MaterialTheme.colorScheme.onSurface,
+            imageVector = Icons.Rounded.FilterList,
+            contentDescription = stringResource(id = R.string.filter)
         )
     }
 }
@@ -174,14 +184,13 @@ fun RaceSummaryList(currentTimeSec: Long, modifier: Modifier = Modifier, raceSum
         ) {
             Text(
                 text = stringResource(id = R.string.no_races),
-                color = Color.White,
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
     } else {
         LazyColumn(
             modifier = modifier,
-            contentPadding = PaddingValues(dimensionResource(id = R.dimen.spacing_3)),
+            contentPadding = PaddingValues(horizontal = dimensionResource(id = R.dimen.spacing_3)),
         ) {
             racesToDisplay.forEach {
                 item {
@@ -207,7 +216,9 @@ fun FilterList(
             )
         ) {
             Box(
-                modifier = Modifier.fillMaxSize().clickable { onDismissRequest() },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { onDismissRequest() },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
@@ -219,7 +230,7 @@ fun FilterList(
                         .pointerInput(Unit) { detectTapGestures { } }
                         .width(dimensionResource(id = R.dimen.dialog_width))
                         .clip(RoundedCornerShape(dimensionResource(id = R.dimen.spacing_2)))
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(color = MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.TopStart
                 ) {
                     LazyColumn {
@@ -257,13 +268,14 @@ fun RaceSummary(currentTimeSec: Long, raceSummary: RaceSummary) {
             .fillMaxSize()
             .padding(top = spacing3)
             .clip(shape = RoundedCornerShape(dimensionResource(id = R.dimen.curve)))
-            .background(color = Color.White),
+            .background(color = MaterialTheme.colorScheme.onSurface),
     ) {
             Text(
                 modifier = Modifier
                     .padding(start = spacing2, top = spacing2, bottom = spacing2),
                 text = "R${raceSummary.raceNumber}",
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSecondary,
                 fontWeight = FontWeight.Bold,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -272,6 +284,7 @@ fun RaceSummary(currentTimeSec: Long, raceSummary: RaceSummary) {
                     .padding(spacing2)
                     .weight(1f),
                 text = raceSummary.meetingName,
+                color = MaterialTheme.colorScheme.onSecondary,
                 style = MaterialTheme.typography.bodyLarge,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -279,6 +292,7 @@ fun RaceSummary(currentTimeSec: Long, raceSummary: RaceSummary) {
                 modifier = Modifier
                     .padding(spacing2),
                 text = timeLeft(currentTimeSec = currentTimeSec, time = raceSummary.advertisedStart.seconds),
+                color = MaterialTheme.colorScheme.onSecondary,
                 style = MaterialTheme.typography.bodyLarge,
             )
     }

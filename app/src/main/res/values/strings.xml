@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Entain Neds</string>
-    <string name="settings">Settings</string>
+    <string name="title">Next to Go</string>
+    <string name="filter">Filter</string>
     <string name="no_races">No races to display</string>
 </resources>
