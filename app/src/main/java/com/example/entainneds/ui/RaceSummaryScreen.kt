@@ -34,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
@@ -91,7 +90,7 @@ fun RaceSummaryScreen(modifier: Modifier = Modifier, raceSummaryViewModel: RaceS
 @Composable
 fun RaceSummaryView(
     modifier: Modifier = Modifier,
-    filteredItems: Set<String>,
+    filteredItems: Set<String> = setOf(),
     raceSummaryModel: RaceSummaryModel,
     currentTimeSec: Long,
     onFilterItemSelected: (String) -> Unit,
@@ -242,7 +241,8 @@ fun FilterList(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { onFilterItemSelected(it.value) },
-                                    verticalAlignment = Alignment.CenterVertically) {
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Checkbox(
                                         modifier = Modifier.padding(dimensionResource(id = R.dimen.spacing_1)),
                                         checked = filteredItems.contains(it.value),
@@ -250,7 +250,6 @@ fun FilterList(
                                     )
                                     Text(
                                         text = it.key,
-                                        color = Color.White,
                                         style = MaterialTheme.typography.bodyLarge,
                                     )
                                 }
