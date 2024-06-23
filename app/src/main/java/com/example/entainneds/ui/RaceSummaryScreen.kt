@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Settings
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
@@ -42,13 +42,9 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -65,7 +61,10 @@ fun RaceSummaryScreen(modifier: Modifier = Modifier, raceSummaryViewModel: RaceS
     var isResumed by remember {
         mutableStateOf(true)
     }
-    RaceSummaryView(modifier = modifier, raceSummaryModel = raceSummaryModel, currentTimeSec = currentTimeMs / 1000)
+    RaceSummaryView(modifier = modifier, raceSummaryModel = raceSummaryModel, filteredItems = raceSummaryModel.filteredItems, currentTimeSec = currentTimeMs / 1000) {
+        uuid ->
+        raceSummaryViewModel.updateFilteredItems(item = uuid)
+    }
     LaunchedEffect(isResumed) {
         while(isResumed) {
             raceSummaryViewModel.fetchRaceSummaries()
@@ -91,7 +90,13 @@ fun RaceSummaryScreen(modifier: Modifier = Modifier, raceSummaryViewModel: RaceS
 }
 
 @Composable
-fun RaceSummaryView(modifier: Modifier = Modifier, raceSummaryModel: RaceSummaryModel, currentTimeSec: Long) {
+fun RaceSummaryView(
+    modifier: Modifier = Modifier,
+    filteredItems: Set<String>,
+    raceSummaryModel: RaceSummaryModel,
+    currentTimeSec: Long,
+    onFilterItemSelected: (String) -> Unit,
+) {
     Box(modifier = modifier.fillMaxSize()) {
         /** If there is an error, show error, otherwise show the list of races **/
         raceSummaryModel.error?.let {
@@ -110,16 +115,19 @@ fun RaceSummaryView(modifier: Modifier = Modifier, raceSummaryModel: RaceSummary
             Box(modifier = Modifier.fillMaxSize()) {
                 Column {
                     RaceFilter { showFilter = !showFilter }
-                    RaceSummaryList(modifier = Modifier.testTag("RaceSummaryList"), currentTimeSec = currentTimeSec, raceSummaries = it)
-                }
-                FilterList(
-                    showDialog = showFilter,
-                    onDismissRequest = { showFilter = false },
-                ) {
-                    Text(
-                        text = "Text"
+                    RaceSummaryList(
+                        modifier = Modifier.testTag("RaceSummaryList"),
+                        currentTimeSec = currentTimeSec,
+                        raceSummaries = it,
+                        filteredItems = raceSummaryModel.filteredItems
                     )
                 }
+                FilterList(
+                    filteredItems = filteredItems,
+                    showDialog = showFilter,
+                    onDismissRequest = { showFilter = false },
+                    onFilterItemSelected = onFilterItemSelected
+                )
             }
         }
         if (raceSummaryModel.loading && raceSummaryModel.raceSummaries.isEmpty()) {
@@ -150,13 +158,36 @@ fun RaceFilter(onClick: () -> Unit) {
 }
 
 @Composable
-fun RaceSummaryList(currentTimeSec: Long, modifier: Modifier = Modifier, raceSummaries: List<RaceSummary>) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(dimensionResource(id = R.dimen.spacing_3)),
-    ) {
-        raceSummaries.filter { it.advertisedStart.seconds - currentTimeSec > -60 }.take(5).forEach { item ->
-            item { RaceSummary(currentTimeSec = currentTimeSec, raceSummary = item) }
+fun RaceSummaryList(currentTimeSec: Long, modifier: Modifier = Modifier, raceSummaries: List<RaceSummary>, filteredItems: Set<String>) {
+    val futureRaces = raceSummaries.filter { it.advertisedStart.seconds - currentTimeSec > -60 }
+
+    val racesToDisplay = if (filteredItems.isEmpty()) {
+        futureRaces.take(5)
+    } else {
+        futureRaces.filter { filteredItems.contains(it.categoryId) }
+    }
+
+    if (racesToDisplay.isEmpty()) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(id = R.string.no_races),
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(dimensionResource(id = R.dimen.spacing_3)),
+        ) {
+            racesToDisplay.forEach {
+                item {
+                    RaceSummary(currentTimeSec = currentTimeSec, raceSummary = it)
+                }
+            }
         }
     }
 }
@@ -164,8 +195,9 @@ fun RaceSummaryList(currentTimeSec: Long, modifier: Modifier = Modifier, raceSum
 @Composable
 fun FilterList(
     showDialog: Boolean,
+    filteredItems: Set<String>,
     onDismissRequest: () -> Unit,
-    content: @Composable () -> Unit,
+    onFilterItemSelected: (String) -> Unit,
 ) {
     if (showDialog) {
         Dialog(
@@ -175,33 +207,42 @@ fun FilterList(
             )
         ) {
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize().clickable { onDismissRequest() },
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier
+                        .shadow(
+                            elevation = dimensionResource(id = R.dimen.shadow),
+                            shape = RoundedCornerShape(dimensionResource(id = R.dimen.spacing_2))
+                        )
                         .pointerInput(Unit) { detectTapGestures { } }
-                        .shadow(8.dp, shape = RoundedCornerShape(16.dp))
-                        .width(300.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            MaterialTheme.colorScheme.surface,
-                        ),
-                    contentAlignment = Alignment.Center
+                        .width(dimensionResource(id = R.dimen.dialog_width))
+                        .clip(RoundedCornerShape(dimensionResource(id = R.dimen.spacing_2)))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.TopStart
                 ) {
                     LazyColumn {
-                        item {
-                            Text(text = "Greyhound racing")
-                        }
-                        item {
-                            Text(text = "Harness racing")
-                        }
-                        item {
-                            Text(text = "Horse racing")
+                        RaceSummaryModel.filterOptions.forEach {
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onFilterItemSelected(it.value) },
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = filteredItems.contains(it.value),
+                                        onCheckedChange = { }
+                                    )
+                                    Text(
+                                        text = it.key,
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-
             }
         }
     }

@@ -43,4 +43,16 @@ class RaceSummaryViewModel @Inject constructor(
                 }
         }
     }
+
+    fun updateFilteredItems(item: String) {
+        _uiState.update {
+            raceSummaryModel -> raceSummaryModel.copy(
+                filteredItems = if (raceSummaryModel.filteredItems.contains(item)) {
+                    raceSummaryModel.filteredItems.minus(item)
+                } else {
+                    raceSummaryModel.filteredItems.plus(item)
+                }
+            )
+        }
+    }
 }

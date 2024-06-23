@@ -21,6 +21,6 @@ class RaceSummaryRepository @Inject constructor(private val nedsService: NedsSer
 
     companion object {
         private const val METHOD = "nextraces"
-        private const val COUNT = 10
+        private const val COUNT = 30
     }
 }
