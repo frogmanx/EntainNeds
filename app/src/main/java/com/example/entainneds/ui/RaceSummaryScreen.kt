@@ -291,6 +291,7 @@ fun RaceSummary(currentTimeSec: Long, raceSummary: RaceSummary) {
                 text = raceSummary.meetingName,
                 color = MaterialTheme.colorScheme.onSecondary,
                 style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
